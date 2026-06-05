@@ -1,0 +1,32 @@
+name: BrewCycle Reminder Cron
+
+on:
+  schedule:
+    # Runs twice daily on GitHub Actions instead of Vercel Cron free tier.
+    # The app endpoint currently checks server time for 07:00 and 09:00 UTC.
+    - cron: "0 7 * * *"
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call BrewCycle reminder endpoint
+        env:
+          APP_URL: ${{ secrets.BREWCYCLE_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "Missing BREWCYCLE_APP_URL repository secret. Set it to your Vercel app URL."
+            exit 1
+          fi
+
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Missing CRON_SECRET repository secret."
+            exit 1
+          fi
+
+          curl --fail --show-error --silent \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL%/}/api/cron/reminders"
