@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 35 41% 95%;
+    --foreground: 221 39% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --muted: 140 37% 94%;
+    --muted-foreground: 220 9% 46%;
+    --border: 31 31% 87%;
+    --input: 31 31% 87%;
+    --ring: 146 45% 34%;
+    --radius: 1.35rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top left, rgba(47, 125, 90, 0.12), transparent 32rem),
+      linear-gradient(180deg, #f7f3ec 0%, #fbfaf7 100%);
+  }
+
+  ::selection {
+    background: #b7791f;
+    color: white;
+  }
+}
+
+@layer components {
+  .app-container {
+    @apply mx-auto w-full max-w-md px-4 sm:max-w-7xl sm:px-6 lg:px-8;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+}
