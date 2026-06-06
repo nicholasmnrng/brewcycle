@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ImageIcon, Loader2, Minus, PackageCheck, Plus, Trash2, Upload } from "lucide-react";
+import { ImageIcon, Loader2, Minus, PackageCheck, Plus, Trash2 } from "lucide-react";
 import { formatRupiah } from "@/lib/orders";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,15 +16,18 @@ type CartItem = {
   product_id: string;
   name: string;
   price: string;
+  originalPrice?: string;
   qty: number;
   imageUrl?: string | null;
+  promoId?: string | null;
+  promoTitle?: string | null;
+  promoDiscountLabel?: string | null;
 };
 
 export function CartClient() {
   const router = useRouter();
   const { notify } = useToast();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [orderId, setOrderId] = useState("");
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const total = useMemo(
@@ -56,16 +60,20 @@ export function CartClient() {
   function checkout(formData: FormData) {
     setMessage("");
     startTransition(async () => {
+      const proof = formData.get("proof");
+
+      if (!(proof instanceof File) || proof.size === 0) {
+        setMessage("Screenshot pembayaran wajib diupload.");
+        notify({ title: "Bukti pembayaran wajib", description: "Upload screenshot transfer sebelum membuat order.", type: "warning" });
+        return;
+      }
+
+      formData.set("items", JSON.stringify(items.map((item) => ({ product_id: item.product_id, qty: item.qty }))));
+      formData.set("total_price", total.toFixed(2));
+
       const response = await fetch("/api/order/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((item) => ({ product_id: item.product_id, qty: item.qty })),
-          total_price: total,
-          shipping_recipient: formData.get("shipping_recipient"),
-          shipping_phone: formData.get("shipping_phone"),
-          shipping_address: formData.get("shipping_address")
-        })
+        body: formData
       });
       const data = await response.json();
 
@@ -75,36 +83,10 @@ export function CartClient() {
         return;
       }
 
-      setOrderId(data.order_id);
-      setMessage("Order dibuat. Upload bukti transfer untuk verifikasi admin.");
-      notify({ title: "Order dibuat", description: "Upload bukti transfer untuk verifikasi admin.", type: "success", browser: true });
+      setMessage("Order dibuat dan bukti pembayaran terkirim ke admin untuk verifikasi.");
+      notify({ title: "Order dibuat", description: "Bukti pembayaran sudah terkirim ke admin.", type: "success", browser: true });
       persist([]);
       window.dispatchEvent(new Event("brewcycle-cart-updated"));
-      router.refresh();
-    });
-  }
-
-  function uploadProof(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    const formData = new FormData(event.currentTarget);
-    formData.set("order_id", orderId);
-
-    startTransition(async () => {
-      const response = await fetch("/api/order/upload-proof", {
-        method: "POST",
-        body: formData
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.message ?? "Upload bukti gagal");
-        notify({ title: "Upload bukti gagal", description: data.message, type: "error" });
-        return;
-      }
-
-      setMessage(`Status pembayaran: ${data.status}`);
-      notify({ title: "Bukti pembayaran terkirim", description: `Status: ${data.status}`, type: "success", browser: true });
       router.refresh();
     });
   }
@@ -131,7 +113,15 @@ export function CartClient() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-950">{item.name}</p>
-                  <p className="text-sm text-slate-600">{formatRupiah(item.price)}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-slate-600">{formatRupiah(item.price)}</p>
+                    {item.promoTitle ? <Badge variant="warning">Promo {item.promoDiscountLabel}</Badge> : null}
+                  </div>
+                  {item.promoTitle && item.originalPrice ? (
+                    <p className="mt-1 text-xs text-slate-400">
+                      <span className="line-through">{formatRupiah(item.originalPrice)}</span> - {item.promoTitle}
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-sm font-semibold text-coffee-dark">Subtotal {formatRupiah(Number(item.price) * item.qty)}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -181,23 +171,16 @@ export function CartClient() {
               <Label htmlFor="shipping_address">Alamat Pengiriman</Label>
               <Input id="shipping_address" name="shipping_address" required minLength={10} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="proof">Screenshot Pembayaran</Label>
+              <Input id="proof" name="proof" type="file" accept=".jpg,.jpeg,.png" required />
+              <p className="text-xs text-slate-500">Upload screenshot transfer JPG/PNG maksimal 5MB agar admin bisa verifikasi pembayaran.</p>
+            </div>
           </form>
           <Button className="w-full" form="checkout-form" disabled={!items.length || isPending}>
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
             {isPending ? "Memproses..." : "Buat Order"}
           </Button>
-          {orderId ? (
-            <form className="space-y-3 border-t pt-4" onSubmit={uploadProof}>
-              <div className="space-y-2">
-                <Label htmlFor="proof">Bukti Transfer</Label>
-                <Input id="proof" name="proof" type="file" accept=".jpg,.jpeg,.png" required />
-              </div>
-              <Button className="w-full" variant="secondary" disabled={isPending}>
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {isPending ? "Mengupload..." : "Upload Bukti"}
-              </Button>
-            </form>
-          ) : null}
           {message ? <p className="text-sm font-medium text-slate-600">{message}</p> : null}
         </CardContent>
       </Card>

@@ -9,6 +9,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { products, promos } from "@/db/schema";
 import { canAccessRoleRoute, dashboardHomeForRole } from "@/lib/role-routing";
+import { bestPromoForProduct } from "@/lib/promos";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,13 @@ export default async function ProductsPage() {
 
   const [productRows, promoRows] = await Promise.all([
     db.select().from(products).orderBy(desc(products.createdAt)),
-    db.select().from(promos).where(eq(promos.status, "ACTIVE")).orderBy(desc(promos.createdAt)).limit(3)
+    db.select().from(promos).where(eq(promos.status, "ACTIVE")).orderBy(desc(promos.createdAt))
   ]);
   const isAdmin = session.user.role === "ADMIN";
+  const productsWithPromos = productRows.map((product) => ({
+    ...product,
+    activePromo: bestPromoForProduct(product.id, Number(product.price), promoRows)
+  }));
 
   return (
     <div className="space-y-6">
@@ -44,7 +49,7 @@ export default async function ProductsPage() {
 
       {!isAdmin && promoRows.length ? (
         <div className="grid gap-4 md:grid-cols-3">
-          {promoRows.map((promo) => (
+          {promoRows.slice(0, 3).map((promo) => (
             <Card key={promo.id} className="bg-coffee-dark text-white">
               <CardContent className="p-5">
                 <Badge className="bg-white/15 text-white">Promo</Badge>
@@ -56,7 +61,7 @@ export default async function ProductsPage() {
         </div>
       ) : null}
 
-      {isAdmin ? <ProductManagement products={productRows} /> : <ProductCatalog products={productRows} />}
+      {isAdmin ? <ProductManagement products={productRows} /> : <ProductCatalog products={productsWithPromos} />}
     </div>
   );
 }

@@ -30,7 +30,8 @@ export function PromoManagement({ promos, products }: { promos: PromoRow[]; prod
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     startTransition(async () => {
       const response = await fetch("/api/admin/promos", {
         method: "POST",
@@ -43,7 +44,8 @@ export function PromoManagement({ promos, products }: { promos: PromoRow[]; prod
         return;
       }
       notify({ title: "Promo dibuat", type: "success", browser: true });
-      event.currentTarget.reset();
+      form.reset();
+      router.replace("/dashboard/promos");
       router.refresh();
     });
   }
@@ -57,6 +59,7 @@ export function PromoManagement({ promos, products }: { promos: PromoRow[]; prod
         return;
       }
       notify({ title: "Promo dinonaktifkan", type: "success", browser: true });
+      router.replace("/dashboard/promos");
       router.refresh();
     });
   }

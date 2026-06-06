@@ -4,6 +4,7 @@ import { Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatRupiah } from "@/lib/orders";
+import type { AppliedPromo } from "@/lib/promos";
 
 export type ProductCardData = {
   id: string;
@@ -13,6 +14,7 @@ export type ProductCardData = {
   imageUrl: string | null;
   price: string;
   stock: number;
+  activePromo?: AppliedPromo | null;
 };
 
 export function ProductCard({
@@ -50,7 +52,17 @@ export function ProductCard({
         </div>
         <p className="line-clamp-2 text-sm leading-6 text-slate-500">{product.description}</p>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-lg font-bold text-coffee-dark">{formatRupiah(product.price)}</p>
+          <div>
+            {product.activePromo ? (
+              <div className="space-y-1">
+                <Badge variant="warning">Promo {product.activePromo.discountLabel}</Badge>
+                <p className="text-lg font-bold text-coffee-dark">{formatRupiah(product.activePromo.finalPrice)}</p>
+                <p className="text-xs text-slate-400 line-through">{formatRupiah(product.activePromo.originalPrice)}</p>
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-coffee-dark">{formatRupiah(product.price)}</p>
+            )}
+          </div>
           {action}
         </div>
       </CardContent>

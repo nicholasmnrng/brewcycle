@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/notifications/toast-provider";
+import type { AppliedPromo } from "@/lib/promos";
 
 type AddToCartButtonProps = {
   product: {
@@ -14,6 +15,7 @@ type AddToCartButtonProps = {
     imageUrl?: string | null;
     category?: string;
     description?: string;
+    activePromo?: AppliedPromo | null;
   };
   compact?: boolean;
 };
@@ -27,15 +29,35 @@ export function AddToCartButton({ product, compact }: AddToCartButtonProps) {
       product_id: string;
       name: string;
       price: string;
+      originalPrice?: string;
       qty: number;
       imageUrl?: string | null;
+      promoId?: string | null;
+      promoTitle?: string | null;
+      promoDiscountLabel?: string | null;
     }>;
     const existing = cart.find((item) => item.product_id === product.id);
+    const unitPrice = product.activePromo?.finalPrice ?? Number(product.price);
 
     if (existing) {
       existing.qty += 1;
+      existing.price = unitPrice.toFixed(2);
+      existing.originalPrice = product.activePromo ? product.activePromo.originalPrice.toFixed(2) : undefined;
+      existing.promoId = product.activePromo?.id ?? null;
+      existing.promoTitle = product.activePromo?.title ?? null;
+      existing.promoDiscountLabel = product.activePromo?.discountLabel ?? null;
     } else {
-      cart.push({ product_id: product.id, name: product.name, price: product.price, qty: 1, imageUrl: product.imageUrl ?? null });
+      cart.push({
+        product_id: product.id,
+        name: product.name,
+        price: unitPrice.toFixed(2),
+        originalPrice: product.activePromo ? product.activePromo.originalPrice.toFixed(2) : undefined,
+        qty: 1,
+        imageUrl: product.imageUrl ?? null,
+        promoId: product.activePromo?.id ?? null,
+        promoTitle: product.activePromo?.title ?? null,
+        promoDiscountLabel: product.activePromo?.discountLabel ?? null
+      });
     }
 
     window.localStorage.setItem("brewcycle-cart", JSON.stringify(cart));

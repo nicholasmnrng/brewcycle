@@ -34,6 +34,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/db";
 import { orders, pickupRequests, products, promos, users } from "@/db/schema";
 import { formatRupiah } from "@/lib/orders";
+import { bestPromoForProduct } from "@/lib/promos";
 
 export const dynamic = "force-dynamic";
 
@@ -438,8 +439,12 @@ async function DriverDashboard({ userId, name }: { userId: string; name: string 
 async function BuyerDashboard() {
   const [productRows, promoRows] = await Promise.all([
     db.select().from(products).orderBy(desc(products.createdAt)).limit(8),
-    db.select().from(promos).where(eq(promos.status, "ACTIVE")).orderBy(desc(promos.createdAt)).limit(3)
+    db.select().from(promos).where(eq(promos.status, "ACTIVE")).orderBy(desc(promos.createdAt))
   ]);
+  const productsWithPromos = productRows.map((product) => ({
+    ...product,
+    activePromo: bestPromoForProduct(product.id, Number(product.price), promoRows)
+  }));
 
   return (
     <RoleDashboardLayout>
@@ -452,7 +457,7 @@ async function BuyerDashboard() {
       />
       {promoRows.length ? (
         <div className="grid gap-4 md:grid-cols-3">
-          {promoRows.map((promo) => (
+          {promoRows.slice(0, 3).map((promo) => (
             <Card key={promo.id} className="bg-coffee-dark text-white">
               <CardContent className="p-5">
                 <Badge className="bg-white/15 text-white">Promo {promo.status}</Badge>
@@ -478,7 +483,7 @@ async function BuyerDashboard() {
         </div>
         {productRows.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {productRows.map((product) => (
+            {productsWithPromos.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
