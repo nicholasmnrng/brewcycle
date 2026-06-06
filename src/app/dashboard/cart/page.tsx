@@ -1,7 +1,20 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { CartClient } from "@/components/buyer/cart-client";
 import { Badge } from "@/components/ui/badge";
+import { dashboardHomeForRole } from "@/lib/role-routing";
 
-export default function CartPage() {
+export default async function CartPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "BUYER") {
+    redirect(dashboardHomeForRole(session.user.role));
+  }
+
   return (
     <div className="space-y-6">
       <div>

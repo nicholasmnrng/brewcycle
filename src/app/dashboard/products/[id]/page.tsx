@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AddToCartButton } from "@/components/buyer/add-to-cart-button";
 import { Badge } from "@/components/ui/badge";
@@ -8,14 +8,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { formatRupiah } from "@/lib/orders";
+import { canAccessRoleRoute, dashboardHomeForRole } from "@/lib/role-routing";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const [session, productRows] = await Promise.all([
-    auth(),
-    db.select().from(products).where(eq(products.id, params.id)).limit(1)
-  ]);
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (!canAccessRoleRoute(session.user.role, ["ADMIN", "BUYER"])) {
+    redirect(dashboardHomeForRole(session.user.role));
+  }
+
+  const productRows = await db.select().from(products).where(eq(products.id, params.id)).limit(1);
   const product = productRows[0];
 
   if (!product) {

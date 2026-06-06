@@ -1,14 +1,27 @@
 import { desc } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { GamificationManagement } from "@/components/admin/gamification-management";
 import { DashboardHero, StatCard } from "@/components/dashboard/primitives";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { gamificationConfig, rewardsCatalog } from "@/db/schema";
+import { dashboardHomeForRole } from "@/lib/role-routing";
 import { Gift, ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function GamificationPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    redirect(dashboardHomeForRole(session.user.role));
+  }
+
   const [configs, catalog] = await Promise.all([
     db.select().from(gamificationConfig).orderBy(desc(gamificationConfig.createdAt)),
     db.select().from(rewardsCatalog)

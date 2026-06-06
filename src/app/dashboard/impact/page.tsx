@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { environmentalConfig, pickupRequests } from "@/db/schema";
+import { canAccessRoleRoute, dashboardHomeForRole } from "@/lib/role-routing";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,10 @@ export default async function ImpactPage() {
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  if (!canAccessRoleRoute(session.user.role, ["ADMIN", "CAFE"])) {
+    redirect(dashboardHomeForRole(session.user.role));
   }
 
   const configs = await db.select().from(environmentalConfig);

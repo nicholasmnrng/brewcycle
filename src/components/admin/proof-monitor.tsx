@@ -15,9 +15,10 @@ type ProofItem = {
   createdAt: string;
 };
 
-export function ProofMonitor({ initialItems }: { initialItems: ProofItem[] }) {
+export function ProofMonitor({ initialItems, limit = 6 }: { initialItems: ProofItem[]; limit?: number }) {
   const [items, setItems] = useState(initialItems);
   const [preview, setPreview] = useState<ProofItem | null>(null);
+  const visibleItems = items.slice(0, limit);
 
   async function load() {
     const response = await fetch("/api/admin/proof-feed", { cache: "no-store" });
@@ -35,7 +36,7 @@ export function ProofMonitor({ initialItems }: { initialItems: ProofItem[] }) {
     <>
       <div className="space-y-3">
         {items.length ? (
-          items.slice(0, 6).map((item) => (
+          visibleItems.map((item) => (
             <div key={`${item.kind}-${item.id}`} className="flex items-center gap-3 rounded-2xl border bg-white p-3">
               <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-eco-soft text-eco">
                 {item.imageUrl ? (

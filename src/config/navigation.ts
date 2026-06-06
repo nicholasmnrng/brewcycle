@@ -3,6 +3,7 @@ import {
   Gift,
   History,
   Home,
+  ImageIcon,
   ListChecks,
   Map,
   Package,
@@ -29,9 +30,10 @@ export const roleNavigation: Record<"ADMIN" | "CAFE" | "DRIVER" | "BUYER", Navig
     { label: "Pesanan", href: "/dashboard/orders", icon: ShoppingCart },
     { label: "Laporan", href: "/dashboard/reports", icon: BarChart3 },
     { label: "Promo", href: "/dashboard/promos", icon: Sparkles },
+    { label: "Proof", href: "/dashboard/proof", icon: ImageIcon },
     { label: "Master Data", href: "/dashboard/master-data", icon: ShieldCheck },
     { label: "Audit Log", href: "/dashboard/audit-log", icon: ScrollText },
-    { label: "Gamifikasi", href: "/dashboard/gamification", icon: ListChecks }
+    { label: "Gamifikasi & Reward", href: "/dashboard/gamification", icon: ListChecks }
   ],
   CAFE: [
     { label: "Home", href: "/dashboard", icon: Home },

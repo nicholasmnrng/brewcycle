@@ -1,10 +1,13 @@
 import { desc, eq, inArray } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { Truck } from "lucide-react";
 import { AssignDriverForm } from "@/components/admin/assign-driver-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { pickupRequests, users } from "@/db/schema";
+import { dashboardHomeForRole } from "@/lib/role-routing";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +23,16 @@ const statusVariant = {
 } as const;
 
 export default async function LogisticsPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    redirect(dashboardHomeForRole(session.user.role));
+  }
+
   const [pickups, drivers] = await Promise.all([
     db
       .select({

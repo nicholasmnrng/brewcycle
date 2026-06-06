@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Leaf } from "lucide-react";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { Leaf, MoreHorizontal, X } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { CartBadgeState, NavItem } from "@/components/nav-item";
+import { Button } from "@/components/ui/button";
 import { roleNavigation, type AppRole, type NavigationItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
@@ -113,17 +116,78 @@ function MobileBottomNav({
 }: {
   items: NavigationItem[];
 }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const hasOverflow = items.length > 5;
+  const primaryItems = hasOverflow ? items.slice(0, 4) : items.slice(0, 5);
+  const overflowItems = hasOverflow ? items.slice(4) : [];
+  const moreActive = overflowItems.some((item) => isNavigationItemActive(item, pathname));
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white/95 shadow-premium backdrop-blur sm:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
-        {items.slice(0, 5).map((item) => (
-          <CartBadgeState key={item.href}>
-            {(cartCount) => (
-              <NavItem item={item} vertical badgeCount={item.href.endsWith("/cart") ? cartCount : 0} />
-            )}
-          </CartBadgeState>
-        ))}
-      </div>
-    </nav>
+    <>
+      {open && hasOverflow ? (
+        <>
+          <button
+            type="button"
+            aria-label="Tutup menu"
+            className="fixed inset-0 z-40 bg-coffee-dark/30 backdrop-blur-[2px] sm:hidden"
+            onClick={() => setOpen(false)}
+          />
+          <div className="fixed inset-x-0 bottom-[4.75rem] z-50 px-3 sm:hidden">
+            <div className="mx-auto max-w-md rounded-t-[1.5rem] border border-border bg-white p-4 shadow-premium">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-slate-950">Menu Admin</p>
+                  <p className="text-xs text-slate-500">Akses semua fitur operasional BrewCycle.</p>
+                </div>
+                <Button size="icon" variant="ghost" aria-label="Tutup menu" onClick={() => setOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid max-h-[56vh] gap-2 overflow-y-auto pb-1">
+                {items.map((item) => (
+                  <div key={item.href} onClick={() => setOpen(false)}>
+                    <CartBadgeState>
+                      {(cartCount) => (
+                        <NavItem item={item} badgeCount={item.href.endsWith("/cart") ? cartCount : 0} />
+                      )}
+                    </CartBadgeState>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-white/95 shadow-premium backdrop-blur sm:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
+          {primaryItems.map((item) => (
+            <CartBadgeState key={item.href}>
+              {(cartCount) => (
+                <NavItem item={item} vertical badgeCount={item.href.endsWith("/cart") ? cartCount : 0} />
+              )}
+            </CartBadgeState>
+          ))}
+          {hasOverflow ? (
+            <button
+              type="button"
+              aria-expanded={open}
+              className={cn(
+                "relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[11px] font-semibold transition-all",
+                moreActive || open ? "bg-eco-soft text-eco shadow-sm" : "text-slate-600 hover:bg-white hover:text-primary"
+              )}
+              onClick={() => setOpen((value) => !value)}
+            >
+              <MoreHorizontal className="h-5 w-5" />
+              <span>More</span>
+            </button>
+          ) : null}
+        </div>
+      </nav>
+    </>
   );
+}
+
+function isNavigationItemActive(item: NavigationItem, pathname: string) {
+  return pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
 }

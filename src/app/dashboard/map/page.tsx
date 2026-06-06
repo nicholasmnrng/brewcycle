@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { pickupRequests, users } from "@/db/schema";
 import { getPickupCenter } from "@/lib/pickup";
+import { dashboardHomeForRole } from "@/lib/role-routing";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,10 @@ export default async function MapPage() {
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  if (session.user.role !== "DRIVER") {
+    redirect(dashboardHomeForRole(session.user.role));
   }
 
   const center = getPickupCenter();

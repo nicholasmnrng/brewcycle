@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { rewards, rewardsCatalog, users } from "@/db/schema";
+import { dashboardHomeForRole } from "@/lib/role-routing";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,10 @@ export default async function RewardsPage() {
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  if (session.user.role !== "CAFE") {
+    redirect(dashboardHomeForRole(session.user.role));
   }
 
   const [userRows, history, catalog] = await Promise.all([

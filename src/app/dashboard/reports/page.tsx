@@ -1,4 +1,6 @@
 import { desc, sql } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { BarChart3, Download, Package, ShoppingCart, Truck } from "lucide-react";
 import { DashboardHero, StatCard } from "@/components/dashboard/primitives";
 import { InteractiveChartCard } from "@/components/dashboard/charts";
@@ -7,10 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { orders, pickupRequests, products, promos, users } from "@/db/schema";
+import { dashboardHomeForRole } from "@/lib/role-routing";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    redirect(dashboardHomeForRole(session.user.role));
+  }
+
   const exports = [
     { label: "Orders CSV", href: "/api/admin/export?type=orders&format=csv" },
     { label: "Pickups CSV", href: "/api/admin/export?type=pickups&format=csv" },
